@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous">
+    </script>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <script src="js/bootstrap.min.js"></script>
+    <title>$__TITULO__$</title>
+</head>
+
+<body>
+    <div>
+        <p>$__MENSAJE__$</p>
+    </div>
+
+    <div>
+        <button>Agregar Calificación</button>
+        <button>Consultar promedio</button>
+
+        <form id="calificacion" method="POST" action="/calificacion">
+            <div>
+                <select name="alumno">
+                    $__ALUMNOS__$
+                </select>
+                <label for="alumno">Alumno</label>
+            </div>
+            <div>
+                <select name="materia">
+                    $__MATERIA__$
+                </select>
+                <label for="materia">Materia</label>
+            </div>
+            <div>
+                <input type="text" name="calificacion">
+                <label for="calificacion">Calificación</label>
+            </div>
+            <div>
+                <button type="submit">Guardar</button>
+            </div>
+        </form>
+    </div>
+
+    <form id="promedio" method="POST" action="/promedio">
+        <div>
+            <select id="prom_alumno" name="alumno" onchange="document.getElementById('prom_materia').value=''">
+                $__ALUMNOS__$
+            </select>
+            <label for="alumno">Alumno</label>
+        </div>
+        <div>
+            <select id="prom_materia" name="materia" onchange="document.getElementById('prom_alumno').value=''">
+                $__MATERIA__$
+            </select>
+            <label for="materia">Materia</label>
+        </div>
+        <div>
+            <button type="submit">Consultar</button>
+        </div>
+    </form>
+    </div>
+
+    <div id="contenedor_auxiliar">
+        $__AUXILIAR__$
+    </div>
+</body>
+
+</html>

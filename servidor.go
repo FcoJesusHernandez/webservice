@@ -113,8 +113,10 @@ func (this *Calificaciones) Promedio(datos []string, respuesta *float64, danger 
 		}
 		if total == 0 {
 			*respuesta = 0
+			*danger = true
 		} else {
 			*respuesta = promedio / total
+			*danger = false
 		}
 	} else if tipo == "2" { // promedio general / todos
 		for e := lista_calificaciones.Front(); e != nil; e = e.Next() {
@@ -123,8 +125,10 @@ func (this *Calificaciones) Promedio(datos []string, respuesta *float64, danger 
 		}
 		if total == 0 {
 			*respuesta = 0
+			*danger = true
 		} else {
 			*respuesta = promedio / total
+			*danger = false
 		}
 	} else if tipo == "3" { // promedio de materia
 		materia_ := Materia{
@@ -151,24 +155,15 @@ func (this *Calificaciones) Promedio(datos []string, respuesta *float64, danger 
 	return nil
 }
 
-func form(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set(
-		"Content-Type",
-		"text/html",
-	)
-	mensaje := "Calificación exitosa"
-	fmt.Fprintf(
-		res,
-		cargarHtml("form.html", "Agregar", mensaje, "", false, false),
-	)
-}
-
 func root(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set(
 		"Content-Type",
 		"text/html",
 	)
-	fmt.Fprintf(res, cargarHtml("index.html", "inicio", "Hola Bienvenido", "", false, false))
+	fmt.Fprintf(res,
+		cargarHtml("index.html", "inicio", "Hola Bienvenido", "", false, false),
+		cargaAlumnosHTML(),
+		cargaMateriasHTML())
 }
 
 var clf = new(Calificaciones)
@@ -195,12 +190,26 @@ func calificacion(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(
 			res,
 			cargarHtml("index.html", "inicio", "Hola, Bienvenido", result, danger, false),
+			cargaAlumnosHTML(),
+			cargaMateriasHTML(),
 		)
 	}
 }
 
 func promedio(res http.ResponseWriter, req *http.Request) {
 	switch req.Method {
+	case "GET":
+		res.Header().Set(
+			"Content-Type",
+			"text/html",
+		)
+
+		fmt.Fprintf(
+			res,
+			cargarHtml("index.html", "agregar calificación", "Hola, Bienvenido", "Captura una calificación", false, false),
+			cargaAlumnosHTML(),
+			cargaMateriasHTML(),
+		)
 	case "POST":
 		if err := req.ParseForm(); err != nil {
 			fmt.Fprintf(res, "ParseForm() error %v", err)
@@ -235,6 +244,8 @@ func promedio(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(
 			res,
 			cargarHtml("index.html", "promedio", "Hola, Bienvenido", salida+fmt.Sprintf("%f", result), danger, false),
+			cargaAlumnosHTML(),
+			cargaMateriasHTML(),
 		)
 	}
 }
@@ -265,8 +276,30 @@ func promedio_gen(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(
 			res,
 			cargarHtml("index.html", "promedio general", "Hola, Bienvenido", salida+fmt.Sprintf("%f", result), danger, false),
+			cargaAlumnosHTML(),
+			cargaMateriasHTML(),
 		)
 	}
+}
+
+func cargaAlumnosHTML() string {
+	var html string
+	html += "<option value='null'>Selecciona una opción</option>"
+	for e := lista_alumnos.Front(); e != nil; e = e.Next() {
+		html += "<option value='" + e.Value.(Alumno).Nombre + "'>" + e.Value.(Alumno).Nombre + "</option>"
+	}
+
+	return html
+}
+
+func cargaMateriasHTML() string {
+	var html string
+	html += "<option value='null'>Selecciona una opción</option>"
+	for e := lista_materias.Front(); e != nil; e = e.Next() {
+		html += "<option value='" + e.Value.(Materia).Nombre + "'>" + e.Value.(Materia).Nombre + "</option>"
+	}
+
+	return html
 }
 
 func cargarHtml(a string, titulo string, mensaje string, auxiliar string, danger_aux bool, danger_msj bool) string {

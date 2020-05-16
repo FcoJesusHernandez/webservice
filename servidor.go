@@ -319,10 +319,33 @@ func cargarHtml(a string, titulo string, mensaje string, auxiliar string, danger
 	} else {
 		salida = strings.Replace(salida, "$__CLASS_MSJ__$", "alert-secondary", -1)
 	}
-
-	//alumnosHTML(),
-	//materiasHTML(),
 	return salida
+}
+
+func respaldo(res http.ResponseWriter, req *http.Request) {
+
+}
+
+func recuperacion(res http.ResponseWriter, req *http.Request) {
+	lista_calificaciones.Init()
+	lista_alumnos.Init()
+	lista_materias.Init()
+
+	res.Header().Set(
+		"Content-Type",
+		"text/html",
+	)
+
+	fmt.Fprintf(
+		res,
+		cargarHtml("index.html", "Vaciado exitoso ", "Información eliminada con éxito ", "Eliminamos toda la información almacenada hasta el momento", true, true),
+		cargaAlumnosHTML(),
+		cargaMateriasHTML(),
+	)
+}
+
+func restauracion(res http.ResponseWriter, req *http.Request) {
+
 }
 
 func main() {
@@ -330,6 +353,9 @@ func main() {
 	http.HandleFunc("/promedio", promedio)
 	http.HandleFunc("/general", promedio_gen)
 	http.HandleFunc("/inicio", root)
+	http.HandleFunc("/respaldo", respaldo)
+	http.HandleFunc("/recuperacion", recuperacion)
+	http.HandleFunc("/restauracion", restauracion)
 	fmt.Println("Arrancando el servidor...")
 	http.ListenAndServe(":9000", nil)
 }

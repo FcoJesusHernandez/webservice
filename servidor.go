@@ -2,9 +2,11 @@ package main
 
 import (
 	"container/list"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -27,7 +29,7 @@ type Calificaciones struct {
 	Calificaciones list.List
 }
 
-var lista_calificaciones list.List
+var lista_calificaciones = Calificaciones{}
 var lista_alumnos list.List
 var lista_materias list.List
 
@@ -71,14 +73,14 @@ func (this *Calificaciones) Evaluar(datos []string, respuesta *string, danger *b
 		}
 
 		bandera = false
-		for e := lista_calificaciones.Front(); e != nil; e = e.Next() {
+		for e := lista_calificaciones.Calificaciones.Front(); e != nil; e = e.Next() {
 			if e.Value.(Calificacion).Alumno.Nombre == evaluacion.Alumno.Nombre && e.Value.(Calificacion).Materia.Nombre == evaluacion.Materia.Nombre {
 				bandera = true
 			}
 		}
 
 		if !bandera {
-			lista_calificaciones.PushBack(evaluacion)
+			lista_calificaciones.Calificaciones.PushBack(evaluacion)
 			*respuesta = "Evaluación anexada con éxito"
 			*danger = false
 		} else {
@@ -105,7 +107,7 @@ func (this *Calificaciones) Promedio(datos []string, respuesta *float64, danger 
 			Nombre: auxiliar,
 		}
 
-		for e := lista_calificaciones.Front(); e != nil; e = e.Next() {
+		for e := lista_calificaciones.Calificaciones.Front(); e != nil; e = e.Next() {
 			if e.Value.(Calificacion).Alumno == alumno_ {
 				total += 1
 				promedio += e.Value.(Calificacion).Calificacion
@@ -119,7 +121,7 @@ func (this *Calificaciones) Promedio(datos []string, respuesta *float64, danger 
 			*danger = false
 		}
 	} else if tipo == "2" { // promedio general / todos
-		for e := lista_calificaciones.Front(); e != nil; e = e.Next() {
+		for e := lista_calificaciones.Calificaciones.Front(); e != nil; e = e.Next() {
 			total += 1
 			promedio += e.Value.(Calificacion).Calificacion
 		}
@@ -135,7 +137,7 @@ func (this *Calificaciones) Promedio(datos []string, respuesta *float64, danger 
 			Nombre: auxiliar,
 		}
 
-		for e := lista_calificaciones.Front(); e != nil; e = e.Next() {
+		for e := lista_calificaciones.Calificaciones.Front(); e != nil; e = e.Next() {
 			if e.Value.(Calificacion).Materia == materia_ {
 				total += 1
 				promedio += e.Value.(Calificacion).Calificacion
@@ -323,11 +325,109 @@ func cargarHtml(a string, titulo string, mensaje string, auxiliar string, danger
 }
 
 func respaldo(res http.ResponseWriter, req *http.Request) {
+	outFile, err := os.Create("calificaciones.json")
+	if err != nil {
+		fmt.Println("Error al convertir a JSON", err.Error())
+		return
+	}
+	var temp_cal []Calificacion
 
+	for e := lista_calificaciones.Calificaciones.Front(); e != nil; e = e.Next() {
+		temp_cal = append(temp_cal, e.Value.(Calificacion))
+	}
+
+	err = json.NewEncoder(outFile).Encode(temp_cal)
+	if err != nil {
+		fmt.Println("Error al convertir a JSON", err.Error())
+		return
+	}
+	outFile.Close()
+
+	res.Header().Set(
+		"Content-Type",
+		"text/html",
+	)
+
+	fmt.Fprintf(
+		res,
+		cargarHtml("index.html", "Respaldo exitoso ", "Información respaldada con éxito ", "Respaldamos toda la información almacenada hasta el momento", true, true),
+		cargaAlumnosHTML(),
+		cargaMateriasHTML(),
+	)
 }
 
 func recuperacion(res http.ResponseWriter, req *http.Request) {
-	lista_calificaciones.Init()
+	inFile, err := os.Open("calificaciones.json")
+	if err != nil {
+		fmt.Println("Error al abrir el archivo", err.Error())
+		return
+	}
+
+	var temp_cal []Calificacion
+
+	err = json.NewDecoder(inFile).Decode(&temp_cal)
+
+	danger := false
+	if err != nil {
+		danger = true
+		fmt.Println("Error de conversión", err.Error())
+		return
+	}
+
+	for i := 0; i < len(temp_cal); i++ {
+		var bandera = false
+		for e := lista_alumnos.Front(); e != nil; e = e.Next() {
+			if e.Value.(Alumno).Nombre == temp_cal[i].Alumno.Nombre {
+				bandera = true
+			}
+		}
+
+		if !bandera {
+			lista_alumnos.PushBack(temp_cal[i].Alumno)
+		}
+
+		bandera = false
+		for e := lista_materias.Front(); e != nil; e = e.Next() {
+			if e.Value.(Materia).Nombre == temp_cal[i].Materia.Nombre {
+				bandera = true
+			}
+		}
+
+		if !bandera {
+			lista_materias.PushBack(temp_cal[i].Materia)
+		}
+
+		bandera = false
+		for e := lista_calificaciones.Calificaciones.Front(); e != nil; e = e.Next() {
+			if e.Value.(Calificacion).Alumno.Nombre == temp_cal[i].Alumno.Nombre && e.Value.(Calificacion).Materia.Nombre == temp_cal[i].Materia.Nombre {
+				bandera = true
+			}
+		}
+
+		if !bandera {
+			lista_calificaciones.Calificaciones.PushBack(temp_cal[i])
+		}
+	}
+
+	fmt.Println(lista_calificaciones.Calificaciones)
+
+	inFile.Close()
+
+	res.Header().Set(
+		"Content-Type",
+		"text/html",
+	)
+
+	fmt.Fprintf(
+		res,
+		cargarHtml("index.html", "Recuperación exitosa ", "Información Restaurada con éxito ", "Restauramos toda la información almacenada hasta el momento", danger, danger),
+		cargaAlumnosHTML(),
+		cargaMateriasHTML(),
+	)
+}
+
+func restauracion(res http.ResponseWriter, req *http.Request) {
+	lista_calificaciones.Calificaciones.Init()
 	lista_alumnos.Init()
 	lista_materias.Init()
 
@@ -342,10 +442,6 @@ func recuperacion(res http.ResponseWriter, req *http.Request) {
 		cargaAlumnosHTML(),
 		cargaMateriasHTML(),
 	)
-}
-
-func restauracion(res http.ResponseWriter, req *http.Request) {
-
 }
 
 func main() {
